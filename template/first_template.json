@@ -1,0 +1,29 @@
+{
+  "survey_id": "dev-survey-001",
+  "title": "Developer Experience Survey",
+  "target_audience": "software developers",
+  "max_questions": 3,
+  "question_areas": [
+    {
+      "area_id": "area_1",
+      "topic": "developer_experience",
+      "intent": "Understand years of experience and primary programming language",
+      "response_type": "open_text",
+      "required": true
+    },
+    {
+      "area_id": "area_2",
+      "topic": "tool_satisfaction",
+      "intent": "Gauge satisfaction with current development toolchain on a scale of 1 to 5",
+      "response_type": "rating_1_to_5",
+      "required": true
+    },
+    {
+      "area_id": "area_3",
+      "topic": "pain_points",
+      "intent": "Identify the biggest daily frustration in their development workflow",
+      "response_type": "open_text",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Survey Chatbot</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 680px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #58a6ff;
+      text-align: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #21262d;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 4px 0 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+
+    .bubble {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      line-height: 1.5;
+      font-size: 0.92rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .bot {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 12px 12px 12px 2px;
+      align-self: flex-start;
+      color: #e6edf3;
+    }
+
+    .user {
+      background: #1f6feb;
+      border-radius: 12px 12px 2px 12px;
+      align-self: flex-end;
+      color: #fff;
+    }
+
+    .typing {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 12px 12px 12px 2px;
+      align-self: flex-start;
+      padding: 10px 14px;
+      color: #8b949e;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    #result-panel {
+      display: none;
+      background: #161b22;
+      border: 1px solid #238636;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    #result-panel h2 {
+      font-size: 0.85rem;
+      color: #3fb950;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #result-panel pre {
+      background: #0d1117;
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      font-size: 0.78rem;
+      color: #c9d1d9;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    #copy-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #copy-btn:hover { background: #30363d; }
+
+    #input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    #msg-input {
+      flex: 1;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      padding: 10px 14px;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    #msg-input:focus { border-color: #58a6ff; }
+    #msg-input:disabled { opacity: 0.5; }
+
+    #send-btn {
+      background: #1f6feb;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    #send-btn:hover:not(:disabled) { background: #388bfd; }
+    #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Developer Survey</h1>
+    <div id="chat"></div>
+    <div id="result-panel">
+      <h2>
+        Completed Survey JSON
+        <button id="copy-btn" onclick="copyJSON()">Copy</button>
+      </h2>
+      <pre id="result-json"></pre>
+    </div>
+    <div id="input-row">
+      <input
+        id="msg-input"
+        type="text"
+        placeholder="Type your answer..."
+        autocomplete="off"
+        disabled
+      />
+      <button id="send-btn" onclick="send()" disabled>Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('msg-input');
+    const sendBtn = document.getElementById('send-btn');
+    const resultPanel = document.getElementById('result-panel');
+    const resultJson = document.getElementById('result-json');
+
+    // Full conversation history sent to Claude on each request
+    const messages = [];
+    let surveyDone = false;
+    let completedJSON = null;
+
+    function addBubble(text, role) {
+      const div = document.createElement('div');
+      div.className = `bubble ${role}`;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div;
+    }
+
+    function addTyping() {
+      const div = document.createElement('div');
+      div.className = 'typing';
+      div.textContent = 'Thinking...';
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div;
+    }
+
+    function setDisabled(disabled) {
+      input.disabled = disabled;
+      sendBtn.disabled = disabled;
+    }
+
+    function extractSurveyComplete(text) {
+      const match = text.match(/<SURVEY_COMPLETE>([\s\S]*?)<\/SURVEY_COMPLETE>/);
+      if (!match) return { clean: text, json: null };
+      const jsonStr = match[1].trim();
+      const clean = text.replace(/<SURVEY_COMPLETE>[\s\S]*?<\/SURVEY_COMPLETE>/, '').trim();
+      return { clean, json: jsonStr };
+    }
+
+    async function botTurn() {
+      setDisabled(true);
+      const typing = addTyping();
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages }),
+        });
+        const data = await res.json();
+        typing.remove();
+
+        if (data.error) {
+          addBubble('Error: ' + data.error, 'bot');
+          setDisabled(false);
+          return;
+        }
+
+        const { clean, json } = extractSurveyComplete(data.reply);
+        const displayText = clean || "Thanks for completing the survey!";
+        addBubble(displayText, 'bot');
+
+        // Store the full reply in history (without stripping the tag — Claude uses it for context)
+        messages.push({ role: 'assistant', content: data.reply });
+
+        if (json) {
+          surveyDone = true;
+          completedJSON = json;
+          try {
+            resultJson.textContent = JSON.stringify(JSON.parse(json), null, 2);
+          } catch {
+            resultJson.textContent = json;
+          }
+          resultPanel.style.display = 'block';
+          resultPanel.scrollIntoView({ behavior: 'smooth' });
+          // Keep input disabled — survey is done
+        } else {
+          setDisabled(false);
+          input.focus();
+        }
+      } catch (err) {
+        typing.remove();
+        addBubble('Network error. Is the server running?', 'bot');
+        setDisabled(false);
+      }
+    }
+
+    async function send() {
+      const text = input.value.trim();
+      if (!text || surveyDone) return;
+
+      addBubble(text, 'user');
+      messages.push({ role: 'user', content: text });
+      input.value = '';
+
+      await botTurn();
+    }
+
+    function copyJSON() {
+      navigator.clipboard.writeText(resultJson.textContent)
+        .then(() => {
+          const btn = document.getElementById('copy-btn');
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+        });
+    }
+
+    // Allow Enter key to send
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    // Kick off the conversation with a system-initiated greeting
+    async function init() {
+      messages.push({ role: 'user', content: 'Hello, I am ready to take the survey.' });
+      await botTurn();
+    }
+
+    init();
+  </script>
+</body>
+</html>
