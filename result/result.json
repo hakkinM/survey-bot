@@ -1,0 +1,25 @@
+{
+  "survey_id": "dev-survey-001",
+  "respondent_id": "dev-8b4f2c",
+  "completed_at": "2025-01-10T14:32:15Z",
+  "responses": [
+    {
+      "area_id": "blockers",
+      "question_asked": "What slowed you down the most this sprint? Could be tooling issues, dependency problems, unclear requirements, or anything else that got in your way.",
+      "answer": "The frontend team was unresponsive to communication and delivered features late, which blocked the backend team from moving forward.",
+      "response_type": "open_text"
+    },
+    {
+      "area_id": "sprint_pride",
+      "question_asked": "What's one thing you shipped this sprint that you're proud of?",
+      "answer": "Delivered the helloworld program by solving a tricky problem and shipped more features than initially promised.",
+      "response_type": "open_text"
+    },
+    {
+      "area_id": "improvement",
+      "question_asked": "What's the single biggest thing your team should change for next sprint to avoid some of the pain you hit this time around?",
+      "answer": "The team composition needs to change — current frontend team members should be replaced to improve collaboration and delivery.",
+      "response_type": "open_text"
+    }
+  ]
+}
