@@ -13,8 +13,8 @@ Vertti Sorvari, Matias Häkkinen and Antto Brandt
 ## Features
 
 - **Conversational surveys** — AI asks natural questions instead of static form fields 
-- **Template-driven** — define surveys in JSON, (see /template)
-- **Structured output** — completed surveys export as valid JSON (see /result)
+- **Template-driven** — define surveys in JSON, (see [template/first_template.json](template/first_template.json))
+- **Structured output** — completed surveys as valid JSON (see [result/result.json](result/result.json))
 - **Lightweight** — Flask backend + vanilla HTML/CSS/JS frontend
 
 ## Setup
